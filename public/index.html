@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<link rel="stylesheet" href="./css/style.css">
+	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="./js/script.js"></script>
+</head>
+<body>
+	<div id="index">
+		<img src="./images/chat_bubble.png" alt="">
+		<h2>Rooms</h2>
+		<ul id="rooms">
+			
+		</ul>
+		<input type="text" id="createRoomName">
+		<button id="createRoom">Create</button>
+	</div>
+	<div id="chatRoom">
+		<h2 id="roomName"></h2>
+		<h2>Messages</h2>
+		<div id="messages">
+		</div>
+	</div>
+</body>
+</html>
