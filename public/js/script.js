@@ -65,8 +65,8 @@ $(function(){
 		{
 			if(peerConnections[i].peer == peerId)
 			{
+				peerConnections[i].close();
 				var conn = peerConnections.splice(i, 1);
-				conn.close();
 				break;
 			}
 		};
