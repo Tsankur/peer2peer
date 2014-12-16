@@ -61,11 +61,13 @@ $(function(){
 	});
 	socket.on('peerLeave', function(peerId){
 		console.log('peerId : '+peerId);
-		for (var i = peerConnections.length - 1; i >= 0; i--) {
+		for (var i = peerConnections.length - 1; i >= 0; i--)
+		{
 			if(peerConnections[i].peer == peerId)
 			{
-				peerConnections[i].close();
-				delete peerConnections[i];
+				var conn = peerConnections.splice(i, 1);
+				conn.close();
+				break;
 			}
 		};
 	});
