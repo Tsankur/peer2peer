@@ -7,6 +7,19 @@ function joinRoom(answer)
 		$('#roomName').html("Room : "+answer['roomName']);
 	}
 }
+function leaveRoom(answer)
+{
+	if(answer['status'])
+	{
+		$("#index").show();
+		$("#chatRoom").hide();
+		for (var i = 0; i < peerConnections.length; i++)
+		{
+			peerConnections[i].close();
+		}
+		peerConnections = [];
+	}
+}
 var peerConnections = [];
 var myId = 0;
 function handleConnection(conn)
@@ -42,12 +55,19 @@ $(function(){
 	socket.on('message', function(message){
 		console.log(message);
 	});
-	socket.on('connectedCount', function(message){
-		console.log('connectedCount : '+message);
-	});
-	socket.on('peerId', function(peerId){
+	socket.on('peerJoin', function(peerId){
 		console.log('peerId : '+peerId);
 		handleConnection(peer.connect(peerId));
+	});
+	socket.on('peerLeave', function(peerId){
+		console.log('peerId : '+peerId);
+		for (var i = peerConnections.length - 1; i >= 0; i--) {
+			if(peerConnections[i].peer == peerId)
+			{
+				peerConnections[i].close();
+				delete peerConnections[i];
+			}
+		};
 	});
 	socket.on('rooms', function(rooms){
 		console.log(rooms);
@@ -67,6 +87,9 @@ $(function(){
 		{
 			socket.emit('createRoom', roomName, myId, joinRoom);
 		}
+	});
+	$("#createRoom").on('click', function(e){
+		socket.emit('leaveRoom', leaveRoom);
 	});
 	$("#newMessage").on('keyup', function(e){
 		if(e.keyCode == 13)
