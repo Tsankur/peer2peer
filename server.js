@@ -27,6 +27,7 @@ function leaveRoom(socket)
 			delete roomList[socket.roomName];
 			console.log('room : '+socket.roomName+'deleted');
 		}
+		socket.emit('rooms', roomList);
 		socket.to('/index').emit('rooms', roomList);
 	}
 }
@@ -80,7 +81,6 @@ io.sockets.on('connection', function (socket) {
 		}
 	});
 	socket.on('leaveRoom', function (callback) {
-		console.log(socket.peerID+' leave room');
 		if(socket.roomName !== undefined && Object.keys(roomList).indexOf(socket.roomName) != -1)
 		{
 			socket.join('/index');
