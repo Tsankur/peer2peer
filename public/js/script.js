@@ -88,7 +88,7 @@ $(function(){
 			socket.emit('createRoom', roomName, myId, joinRoom);
 		}
 	});
-	$("#createRoom").on('click', function(e){
+	$("#leaveRoom").on('click', function(e){
 		socket.emit('leaveRoom', leaveRoom);
 	});
 	$("#newMessage").on('keyup', function(e){
