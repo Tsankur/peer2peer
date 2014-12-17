@@ -7,6 +7,7 @@
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
+	<script src="./js/three.min.js"></script>
 	<script src="./js/script.js"></script>
 </head>
 <body>
@@ -18,6 +19,7 @@
 		</ul>
 		<input type="text" id="createRoomName">
 		<button id="createRoom">Create</button>
+		<button id="lauchGame">Launch game</button>
 	</div>
 	<div id="chatRoom">
 		<h2 id="roomName"></h2>
@@ -25,6 +27,12 @@
 		<input type="text" id="newMessage">
 		<h2>Messages</h2>
 		<div id="messages">
+		</div>
+	</div>
+	<div id="game">
+		<button id="leaveGame">Quit game</button>
+		<div id="gameHolder">
+			
 		</div>
 	</div>
 </body>

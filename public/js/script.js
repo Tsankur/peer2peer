@@ -37,8 +37,94 @@ function receiveDataFromPeer(data)
 	console.log(data);
 	$("#messages").prepend('<p>'+data+'</p>');
 }
+// extends three.js matrix4
+
+THREE.Matrix4.prototype.front = function()
+{
+	var te = this.elements;
+	return new THREE.Vector3(te[0], te[1], te[2]);
+}
+THREE.Matrix4.prototype.left = function()
+{
+	var te = this.elements;
+	return new THREE.Vector3(te[4], te[5], te[6]);
+}
+THREE.Matrix4.prototype.up = function()
+{
+	var te = this.elements;
+	return new THREE.Vector3(te[8], te[9], te[10]);
+}
+
+// tree.js affichage
+var renderer = null;
+var ship = null;
+var moveForward = false;
+var turnLeft = false;
+var turnRight = false;
+function CreateShip()
+{
+	var shipShape = new THREE.Shape();
+	shipShape.moveTo( -10,-5 );
+	shipShape.lineTo( 10, 0 );
+	shipShape.lineTo( -10, 5 );
+	shipShape.lineTo( -10, -5 );
+	var shipGeom = new THREE.ShapeGeometry( shipShape );
+	return new THREE.Mesh( shipGeom, new THREE.MeshBasicMaterial( { color: 0xff0000 } ) ) ;	scene.add( rectMesh );
+}
+function UpdateObject()
+{
+	if(moveForward)
+	{
+		ship.position.add(ship.matrix.front().multiplyScalar(20/6));
+	}
+	if(turnLeft)
+	{	
+		ship.rotation.z += 0.05;
+	}
+	if(turnRight)
+	{	
+		ship.rotation.z -= 0.05;
+	}
+}
+function lauchGame()
+{
+	var scene = new THREE.Scene();
+	var camera = new THREE.OrthographicCamera( -400, 400, 300,-300, 1, 1000 );
+	renderer = new THREE.WebGLRenderer();
+	renderer.setSize( 800, 600 );
+	$("#gameHolder").append( renderer.domElement );
+	scene.add(camera);
+	/*var geometry = new THREE.BoxGeometry( 100, 100, 100 );
+	var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+	var cube = new THREE.Mesh( geometry, material );
+	scene.add( cube );*/
+	camera.position.z = 500;
+	ship = CreateShip();
+	scene.add(ship);
+	
+	function renderGame()
+	{
+		if(renderer)
+		{
+			UpdateObject();
+			requestAnimationFrame( renderGame );
+			renderer.render( scene, camera );
+		}
+	}
+	renderGame();
+	$("#index").hide();
+	$("#game").show();
+}
+function quitGame()
+{
+	renderer = null;
+	$("#gameHolder").empty();
+	$("#index").show();
+	$("#game").hide();
+}
 $(function(){
 	$("#chatRoom").hide();
+	$("#game").hide();
 	var socket = io.connect('http://78.236.192.198:2301');
 	var peer = new Peer(null, {host: '78.236.192.198', port: 2302, path: '/'});
 	peer.on('open', function(id){
@@ -106,6 +192,36 @@ $(function(){
 				$("#messages").prepend('<p>'+message+'</p>');
 				$("#newMessage").val('');
 			}
+		}
+	});
+	$("#lauchGame").on('click', lauchGame);
+	$("#leaveGame").on('click', quitGame);
+	$(document).on('keydown', function(e){
+		if(e.keyCode == 38)
+		{
+			moveForward = true;
+		}
+		else if(e.keyCode == 37)
+		{
+			turnLeft = true;
+		}
+		else if(e.keyCode == 39)
+		{
+			turnRight = true;
+		}
+	});
+	$(document).on('keyup', function(e){
+		if(e.keyCode == 38)
+		{
+			moveForward = false;
+		}
+		else if(e.keyCode == 37)
+		{
+			turnLeft = false;
+		}
+		else if(e.keyCode == 39)
+		{
+			turnRight = false;
 		}
 	});
 });
