@@ -2,3 +2,23 @@ h2
 {
 	color: green;
 }
+#gameHolder
+{
+	position: relative;
+	width: 800px;
+	height: 600px;
+}
+canvas
+{
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	z-index: 0;
+}
+#positionText
+{
+	position: absolute;
+	z-index: 10;
+	color: white;
+	margin: 5px 10px;
+}

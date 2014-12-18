@@ -31,8 +31,7 @@ function leaveRoom(socket)
 		socket.to('/index').emit('rooms', roomList);
 	}
 }
-// Chargement de socket.io
-// Quand un client se connecte, on le note dans la console
+
 io.sockets.on('connection', function (socket) {
 	console.log('Un client s\'est connecté depuis l\'adresse : ' + socket.client.conn.remoteAddress);
 	connectedCount++;
@@ -48,7 +47,7 @@ io.sockets.on('connection', function (socket) {
 		if(Object.keys(roomList).indexOf(roomName) == -1)
 		{
 			socket.leave('/index');
-			socket.join('/'+roomName);
+			socket.join('/room/'+roomName);
 			roomList[roomName] = 1;
 			socket.roomName = roomName;
 			socket.peerID = id;
@@ -66,7 +65,7 @@ io.sockets.on('connection', function (socket) {
 		if(Object.keys(roomList).indexOf(roomName) != -1)
 		{
 			socket.leave('/index');
-			socket.join('/'+roomName);
+			socket.join('/room/'+roomName);
 			roomList[roomName]++;
 			socket.roomName = roomName;
 			socket.peerID = id;
@@ -84,7 +83,7 @@ io.sockets.on('connection', function (socket) {
 		if(socket.roomName !== undefined && Object.keys(roomList).indexOf(socket.roomName) != -1)
 		{
 			socket.join('/index');
-			socket.leave('/'+socket.roomName);
+			socket.leave('/room/'+socket.roomName);
 			leaveRoom(socket);
 			socket.to('/'+socket.roomName).emit('peerLeave', socket.peerID);
 			delete socket.roomName;

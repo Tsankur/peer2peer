@@ -7,7 +7,9 @@
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
-	<script src="./js/three.min.js"></script>
+	<!--<script src="./js/three.min.js"></script>-->
+	<script src="./js/babylon.2.0-alpha.js"></script>
+	<script src="./js/Oimo.js"></script>
 	<script src="./js/script.js"></script>
 </head>
 <body>
@@ -19,7 +21,7 @@
 		</ul>
 		<input type="text" id="createRoomName">
 		<button id="createRoom">Create</button>
-		<button id="lauchGame">Launch game</button>
+		<button id="launchGame">Launch game</button>
 	</div>
 	<div id="chatRoom">
 		<h2 id="roomName"></h2>
@@ -32,7 +34,8 @@
 	<div id="game">
 		<button id="leaveGame">Quit game</button>
 		<div id="gameHolder">
-			
+			<canvas id="babylonRenderer"></canvas>
+			<p id="positionText">x : 0 y : 0</p>
 		</div>
 	</div>
 </body>

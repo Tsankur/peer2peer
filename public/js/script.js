@@ -38,8 +38,8 @@ function receiveDataFromPeer(data)
 	$("#messages").prepend('<p>'+data+'</p>');
 }
 // extends three.js matrix4
-
-THREE.Matrix4.prototype.front = function()
+/*
+THREE.Matrix4.prototype.forward = function()
 {
 	var te = this.elements;
 	return new THREE.Vector3(te[0], te[1], te[2]);
@@ -61,45 +61,59 @@ var ship = null;
 var moveForward = false;
 var turnLeft = false;
 var turnRight = false;
-function CreateShip()
+function CreateShip(shipColor)
 {
 	var shipShape = new THREE.Shape();
-	shipShape.moveTo( -10,-5 );
-	shipShape.lineTo( 10, 0 );
-	shipShape.lineTo( -10, 5 );
-	shipShape.lineTo( -10, -5 );
+	shipShape.moveTo( -20,-10 );
+	shipShape.lineTo( 20, 0 );
+	shipShape.lineTo( -20, 10 );
+	shipShape.lineTo( -20, -10 );
 	var shipGeom = new THREE.ShapeGeometry( shipShape );
-	return new THREE.Mesh( shipGeom, new THREE.MeshBasicMaterial( { color: 0xff0000 } ) ) ;	scene.add( rectMesh );
+	var newShip = new THREE.Mesh( shipGeom, new THREE.MeshBasicMaterial( { color: shipColor } ) ) ;
+
+	var reactorShape = new THREE.Shape();
+	reactorShape.moveTo( -20,-4 );
+	reactorShape.lineTo( -10, 0 );
+	reactorShape.lineTo( -20, 4 );
+	reactorShape.lineTo( -20, -4 );
+	var reactorGeom = new THREE.ShapeGeometry( reactorShape );
+	var newReactor = new THREE.Mesh( reactorGeom, new THREE.MeshBasicMaterial( { color: 0xffff00 } ) ) ;
+	newShip.add(newReactor);
+	newReactor.position.z = 0.1;
+	return newShip;
 }
 function UpdateObject()
 {
-	if(moveForward)
+	if(ship)
 	{
-		ship.position.add(ship.matrix.front().multiplyScalar(20/6));
-	}
-	if(turnLeft)
-	{	
-		ship.rotation.z += 0.05;
-	}
-	if(turnRight)
-	{	
-		ship.rotation.z -= 0.05;
+		if(moveForward)
+		{
+			ship.position.add(ship.matrix.forward().multiplyScalar(200/60));
+			$("#positionText").html("x : "+parseInt(ship.position.x)+" y : "+parseInt(ship.position.y));
+		}
+		if(turnLeft)
+		{	
+			ship.rotation.z += 0.05;
+		}
+		if(turnRight)
+		{	
+			ship.rotation.z -= 0.05;
+		}
 	}
 }
-function lauchGame()
+
+//game lauch and quit
+function launchGame()
 {
 	var scene = new THREE.Scene();
 	var camera = new THREE.OrthographicCamera( -400, 400, 300,-300, 1, 1000 );
-	renderer = new THREE.WebGLRenderer();
+	renderer = new THREE.WebGLRenderer({antialias: true});
 	renderer.setSize( 800, 600 );
 	$("#gameHolder").append( renderer.domElement );
+	$("#gameHolder").append('<p id="positionText">x : 0 y : 0</p>');
 	scene.add(camera);
-	/*var geometry = new THREE.BoxGeometry( 100, 100, 100 );
-	var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-	var cube = new THREE.Mesh( geometry, material );
-	scene.add( cube );*/
 	camera.position.z = 500;
-	ship = CreateShip();
+	ship = CreateShip(0x00ff00);
 	scene.add(ship);
 	
 	function renderGame()
@@ -121,12 +135,130 @@ function quitGame()
 	$("#gameHolder").empty();
 	$("#index").show();
 	$("#game").hide();
+}*/
+// BABYLON.js affichage
+var engine = null;
+var ship = null;
+var moveForward = false;
+var turnLeft = false;
+var turnRight = false;
+var shipPrefab = null;
+var shipID = 0;
+var camera = null;
+function createTriangle(p1, p2, p3, name, scene)
+{
+	var triangle = new BABYLON.Mesh(name, scene);
+
+	var indices = [0,1,2];
+	var positions = [p1.x, p1.y, p1.z, p2.x, p2.y, p2.z, p3.x, p3.y, p3.z];
+	var normals = [0,0,1 ,0,0,1 ,0,0,1];
+	triangle.setVerticesData(BABYLON.VertexBuffer.PositionKind, positions, true);
+	triangle.setVerticesData(BABYLON.VertexBuffer.NormalKind, normals, true);
+	
+	triangle.setIndices(indices);
+
+	return triangle;
+}
+function CreateShipPrefab(scene)
+{
+	shipPrefab = createTriangle(new BABYLON.Vector3(-20,-10,0), new BABYLON.Vector3(20,0,0), new BABYLON.Vector3(-20,10,0), "shipPrefab", scene);
+	var newReactor = createTriangle(new BABYLON.Vector3(-20,-4,0), new BABYLON.Vector3(-10,0,0), new BABYLON.Vector3(-20,4,0), "shipReactorPrefab", scene);
+	shipPrefab.material = new BABYLON.StandardMaterial("shipPrefabColor", scene);
+	newReactor.material = new BABYLON.StandardMaterial("shipReactorPrefabColor", scene);
+	newReactor.material.diffuseColor = new BABYLON.Color3(1.0, 1.0, 0);
+	newReactor.position.z = -0.1;
+	newReactor.parent = shipPrefab;
+	shipPrefab._isEnabled = false;
+}
+function CreateShip(shipColor, scene)
+{
+	if(shipPrefab)
+	{
+		var newShip = shipPrefab.clone("ship"+shipID, null, false);
+		shipID++;
+		newShip.material = new BABYLON.StandardMaterial("shipColor"+shipID, scene);
+		newShip.material.diffuseColor = shipColor;
+		newShip._isEnabled = true;
+		return newShip;
+	}
+	return null;
+}
+function UpdateObject()
+{
+	if(ship)
+	{
+		if(moveForward)
+		{
+			ship.translate(BABYLON.Axis.X, 200/60, BABYLON.Space.LOCAL);
+			$("#positionText").html("x : "+parseInt(ship.position.x)+" y : "+parseInt(ship.position.y));
+			
+		}
+		if(turnLeft)
+		{	
+			ship.rotation.z += 0.05;
+		}
+		if(turnRight)
+		{	
+			ship.rotation.z -= 0.05;
+		}
+	}
+}
+function UpdateCamera()
+{
+	if(camera)
+	{
+		var shipPos = new BABYLON.Vector3(ship.position.x, ship.position.y, -500);
+		camera.position = camera.position.add(shipPos.subtract(camera.position).scale(0.1));
+	}
+}
+
+//game lauch and quit
+function launchGame()
+{
+	$("#index").hide();
+	$("#game").show();
+	var canvas = document.getElementById("babylonRenderer");
+	engine = new BABYLON.Engine(canvas, true)
+	var scene = new BABYLON.Scene(engine);
+	scene.clearColor = new BABYLON.Color3(0, 0, 0);
+	camera = new BABYLON.FreeCamera("followCam", new BABYLON.Vector3(0,0,-50), scene);
+	camera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
+	camera.orthoTop = 300;
+	camera.orthoBottom = -300;
+	camera.orthoLeft = -400
+	camera.orthoRight = 400;
+
+	camera.setTarget(BABYLON.Vector3.Zero());
+	CreateShipPrefab(scene);
+	GenerateStars(scene);
+	//camera.attachControl(canvas, false);
+	var light = new BABYLON.DirectionalLight("light1", new BABYLON.Vector3(0, 0, -1), scene);
+	light.diffuse = new BABYLON.Color3(1, 1, 1);
+	ship = CreateShip(new BABYLON.Color3(0, 1, 0), scene);
+
+	engine.runRenderLoop(function () {
+		UpdateObject();
+		UpdateCamera();
+		scene.render();
+	});
+	// Watch for browser/canvas resize events
+	window.addEventListener("resize", function () {
+		engine.resize();
+	});
+}
+function quitGame()
+{
+	renderer = null;
+	$("#index").show();
+	$("#game").hide();
 }
 $(function(){
 	$("#chatRoom").hide();
 	$("#game").hide();
-	var socket = io.connect('http://78.236.192.198:2301');
-	var peer = new Peer(null, {host: '78.236.192.198', port: 2302, path: '/'});
+	/*var socket = io.connect('http://78.236.192.198:2301');
+	var peer = new Peer(null, {host: '78.236.192.198', port: 2302, path: '/'});*/
+	var socket = io.connect('http://localhost:2301');
+	var peer = new Peer(null, {host: 'localhost', port: 2302, path: '/'});
 	peer.on('open', function(id){
 		myId = id,
 		console.log(id);
@@ -194,7 +326,7 @@ $(function(){
 			}
 		}
 	});
-	$("#lauchGame").on('click', lauchGame);
+	$("#launchGame").on('click', launchGame);
 	$("#leaveGame").on('click', quitGame);
 	$(document).on('keydown', function(e){
 		if(e.keyCode == 38)
