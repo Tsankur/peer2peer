@@ -25,7 +25,7 @@ function leaveRoom(socket)
 		if(roomList[socket.roomName] == 0)
 		{
 			delete roomList[socket.roomName];
-			console.log('room : '+socket.roomName+'deleted');
+			console.log('room : '+socket.roomName+' deleted');
 		}
 		socket.emit('rooms', roomList);
 		socket.to('/index').emit('rooms', roomList);
@@ -43,16 +43,21 @@ io.sockets.on('connection', function (socket) {
 		leaveRoom(socket);
 		console.log('Un client s\'est déconnecté depuis l\'adresse : ' + this.client.conn.remoteAddress);
 	});
-	socket.on('createRoom', function (roomName, id, callback) {
+	socket.on('setId', function (id, callback)
+	{
+		socket.peerID = id;
+		console.log('Client send his id :' + socket.peerID);
+		callback({'status':1});
+	});
+	socket.on('createRoom', function (roomName, callback) {
 		if(Object.keys(roomList).indexOf(roomName) == -1)
 		{
 			socket.leave('/index');
 			socket.join('/room/'+roomName);
 			roomList[roomName] = 1;
 			socket.roomName = roomName;
-			socket.peerID = id;
 			socket.to('/index').emit('rooms', roomList);
-			console.log('création d\'une room ' + roomName);
+			console.log('Création d\'une room ' + roomName + ' par le client : ' + socket.peerID);
 			callback({'status':1, 'roomName':roomName});
 		}
 		else
@@ -61,16 +66,16 @@ io.sockets.on('connection', function (socket) {
 			callback({'status':0, 'roomName':roomName});
 		}
 	});
-	socket.on('joinRoom', function (roomName, id, callback) {
+	socket.on('joinRoom', function (roomName, callback) {
 		if(Object.keys(roomList).indexOf(roomName) != -1)
 		{
 			socket.leave('/index');
 			socket.join('/room/'+roomName);
 			roomList[roomName]++;
 			socket.roomName = roomName;
-			socket.peerID = id;
-			socket.to('/'+roomName).emit('peerJoin', id);
+			socket.to('/room/'+roomName).emit('peerJoin', socket.peerID);
 			socket.to('/index').emit('rooms', roomList);
+			console.log('Le client : ' + socket.peerID +' a rejoin la room ' + roomName);
 			callback({'status':1, 'roomName':roomName});
 		}
 		else
@@ -84,10 +89,10 @@ io.sockets.on('connection', function (socket) {
 		{
 			socket.join('/index');
 			socket.leave('/room/'+socket.roomName);
+			console.log('Le client : ' + socket.peerID +' a quitter la room ' + socket.roomName);
 			leaveRoom(socket);
-			socket.to('/'+socket.roomName).emit('peerLeave', socket.peerID);
+			socket.to('/room/'+socket.roomName).emit('peerLeave', socket.peerID);
 			delete socket.roomName;
-			delete socket.peerID;
 			callback({'status':1});
 		}
 		else
@@ -95,5 +100,20 @@ io.sockets.on('connection', function (socket) {
 			console.log("client not in a room");
 			callback({'status':0});
 		}
+	});
+	socket.on('joinGame', function (callback) {
+		socket.leave('/index');
+		socket.join('/game');
+		socket.to('/game').emit('peerJoin', socket.peerID);
+		console.log('Le client : ' + socket.peerID +' est entrer en jeu');
+		callback({'status':1});
+	});
+	socket.on('leaveGame', function (callback) {
+		socket.join('/index');
+		socket.leave('/game');
+		socket.to('/game').emit('peerLeave', socket.peerID);
+		socket.emit('rooms', roomList);
+		console.log('Le client : ' + socket.peerID +' a quitté le jeu');
+		callback({'status':1});
 	});
 });
