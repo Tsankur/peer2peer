@@ -1,9 +1,24 @@
+
+/*   panel management   */
+function showPanel(name)
+{
+	$(".panel").hide();
+	if(name !== undefined)
+	{
+		$("#"+name).show();
+	}
+}
+
+/*   peer management   */
+var peerConnections = [];
+var myId = 0;
+var idSet = false;
+var inGame = false;
 function joinRoom(answer)
 {
 	if(answer['status'])
 	{
-		$("#index").hide();
-		$("#chatRoom").show();
+		showPanel("chatRoom");
 		$('#roomName').html("Room : "+answer['roomName']);
 	}
 }
@@ -11,8 +26,7 @@ function leaveRoom(answer)
 {
 	if(answer['status'])
 	{
-		$("#index").show();
-		$("#chatRoom").hide();
+		showPanel("index");
 		for (var i = 0; i < peerConnections.length; i++)
 		{
 			peerConnections[i].close();
@@ -20,10 +34,6 @@ function leaveRoom(answer)
 		peerConnections = [];
 	}
 }
-var peerConnections = [];
-var myId = 0;
-var idSet = false;
-var inGame = false;
 function handleConnection(conn)
 {
 	peerConnections.push(conn);
@@ -59,6 +69,8 @@ function receiveDataFromPeer(data)
 		}
 	}
 }
+
+/*   game management   */
 function handleGameMessage(data, conn)
 {
 	var message = JSON.parse(data);
@@ -67,17 +79,26 @@ function handleGameMessage(data, conn)
 		case "createShip":
 		{
 			var newShip = CreateShip(new BABYLON.Color3(1, 0, 0));
-			newShip.position = new BABYLON.Vector3(message.position.x, message.position.y, message.position.z);
+			newShip.position = new BABYLON.Vector3(message.position.x, message.position.y, 0);
 			newShip.rotation.z = message.rotation;
 			conn.ship = newShip;
 			break;
 		}
 		case "updateShip":
 		{
-			if(conn.ship !== undefined)
+			if(conn.ship !== undefined && conn.LastupdateTime !== undefined)
 			{
-				conn.ship.position = new BABYLON.Vector3(message.position.x, message.position.y, message.position.z);
-				conn.ship.rotation.z = message.rotation;
+				if(conn.LastupdateTime < message.updateTime)
+				{
+					conn.destination = new BABYLON.Vector3(message.position.x, message.position.y, 0);
+					
+					conn.ship.rotation.z = message.rotation;
+					conn.LastupdateTime = message.updateTime;
+				}
+			}
+			else
+			{
+				conn.LastupdateTime = message.updateTime;
 			}
 			break;
 		}
@@ -95,6 +116,9 @@ var shipID = 0;
 var camera = null;
 var scene = null;
 var frameCount = 0;
+var updatePosition = false;
+var updateTime = 0;
+var nextUpdateTime = 0;
 function createTriangle(p1, p2, p3, name)
 {
 	var triangle = new BABYLON.Mesh(name, scene);
@@ -128,37 +152,48 @@ function CreateShip(shipColor)
 		shipID++;
 		newShip.material = new BABYLON.StandardMaterial("shipColor"+shipID, scene);
 		newShip.material.diffuseColor = shipColor;
-		newShip._isEnabled = true;
-		return newShip;
+		newShip._isEnabled = true;		return newShip;
 	}
 	return null;
 }
-function UpdateObjects()
+function UpdateObjects(timeDelta)
 {
+	nextUpdateTime+=timeDelta;
+	updateTime++;
 	if(ship)
 	{
-		frameCount++;
 		if(moveForward)
 		{
-			ship.translate(BABYLON.Axis.X, 200/60, BABYLON.Space.LOCAL);
+			ship.translate(BABYLON.Axis.X, 200*timeDelta, BABYLON.Space.LOCAL);
 			$("#positionText").html("x : "+parseInt(ship.position.x)+" y : "+parseInt(ship.position.y));
-			
+			updatePosition = true;
 		}
 		if(turnLeft)
 		{	
-			ship.rotation.z += 0.05;
+			ship.rotation.z += Math.PI/2 * timeDelta;
+			updatePosition = true;
 		}
 		if(turnRight)
 		{	
-			ship.rotation.z -= 0.05;
+			ship.rotation.z -= Math.PI/2 * timeDelta;
+			updatePosition = true;
 		}
-		if(frameCount >= 5)
+		for (var i = 0; i < peerConnections.length; i++)
 		{
-			frameCount = 0;
-			for (var i = 0; i < peerConnections.length; i++)
+			var conn = peerConnections[i];
+			conn.ship.position.add(conn)
+		}
+		if(nextUpdateTime > 0.2)
+		{
+			nextUpdateTime -= 0.2;
+			if(updatePosition)
 			{
-				peerConnections[i].send(JSON.stringify({'type': 'updateShip', 'position': ship.position, 'rotation': ship.rotation.z}));
-			}
+				updatePosition = false;
+				for (var i = 0; i < peerConnections.length; i++)
+				{
+					peerConnections[i].send(JSON.stringify({'type': 'updateShip', 'updateTime': updateTime, 'position': ship.position, 'rotation': ship.rotation.z}));
+				}
+			} 
 		}
 	}
 }
@@ -177,26 +212,26 @@ function launchGame(answer)
 	if(answer['status'])
 	{
 		inGame = true;
-		$("#index").hide();
-		$("#game").show();
+		showPanel("game");
 		var canvas = document.getElementById("babylonRenderer");
-		engine = new BABYLON.Engine(canvas, true)
+		engine = new BABYLON.Engine(canvas, true);
 		scene = new BABYLON.Scene(engine);
 		scene.clearColor = new BABYLON.Color3(0, 0, 0);
 		camera = new BABYLON.FreeCamera("followCam", new BABYLON.Vector3(0,0,-50), scene);
 		camera.mode = BABYLON.Camera.ORTHOGRAPHIC_CAMERA;
-		camera.orthoTop = 300;
-		camera.orthoBottom = -300;
-		camera.orthoLeft = -400
-		camera.orthoRight = 400;
+		
+		camera.orthoTop = $(canvas).height()/2;
+		camera.orthoBottom = -$(canvas).height()/2;
+		camera.orthoLeft = -$(canvas).width()/2;
+		camera.orthoRight = $(canvas).width()/2;
 
 		var background = BABYLON.Mesh.CreatePlane("plane", "10000", scene);
 		background.position.z = 50;
-	    var materialBackground = new BABYLON.StandardMaterial("texturePlane", scene);
-	    materialBackground.emissiveTexture = new BABYLON.Texture("./images/star-space-tile.jpg", scene);
-	    materialBackground.emissiveTexture.uScale = 40.0;
-	    materialBackground.emissiveTexture.vScale = 40.0;
-	    materialBackground.backFaceCulling = false;//Allways show the front and the back of an element
+		var materialBackground = new BABYLON.StandardMaterial("texturePlane", scene);
+		materialBackground.emissiveTexture = new BABYLON.Texture("./images/star-space-tile.jpg", scene);
+		materialBackground.emissiveTexture.uScale = 30.0;
+		materialBackground.emissiveTexture.vScale = 30.0;
+		materialBackground.backFaceCulling = false;//Allways show the front and the back of an element
 		background.material = materialBackground;
 
 		camera.setTarget(BABYLON.Vector3.Zero());
@@ -205,14 +240,24 @@ function launchGame(answer)
 		var light = new BABYLON.DirectionalLight("light1", new BABYLON.Vector3(0, 0, -1), scene);
 		light.diffuse = new BABYLON.Color3(1, 1, 1);
 		ship = CreateShip(new BABYLON.Color3(0, 1, 0));
+		ship.position.z = -1;
 
+		lastFrameTime = (new Date()).getTime();
 		engine.runRenderLoop(function () {
-			UpdateObjects();
+			var frameTime = (new Date()).getTime();
+			var timeDelta = (frameTime - lastFrameTime)/1000;
+			lastFrameTime = frameTime;
+			UpdateObjects(timeDelta);
 			UpdateCamera();
 			scene.render();
 		});
 		// Watch for browser/canvas resize events
 		window.addEventListener("resize", function () {
+			
+			camera.orthoTop = $(canvas).height()/2;
+			camera.orthoBottom = -$(canvas).height()/2;
+			camera.orthoLeft = -$(canvas).width()/2;
+			camera.orthoRight = $(canvas).width()/2;
 			engine.resize();
 		});
 	}
@@ -224,17 +269,20 @@ function quitGame(answer)
 		inGame = false;
 		engine.stopRenderLoop();
 		engine.dispose();
-		$("#index").show();
-		$("#game").hide();
+		showPanel("index");
+		for (var i = 0; i < peerConnections.length; i++)
+		{
+			peerConnections[i].close();
+		}
+		peerConnections = [];
 	}
 }
 $(function(){
-	$("#chatRoom").hide();
-	$("#game").hide();
-	var socket = io.connect('http://78.236.192.198:2301');
-	var peer = new Peer(null, {host: '78.236.192.198', port: 2302, path: '/'});
-	/*var socket = io.connect('http://localhost:2301');
-	var peer = new Peer(null, {host: 'localhost', port: 2302, path: '/'});*/
+	showPanel("index");
+	/*var socket = io.connect('http://78.236.192.198:2301');
+	var peer = new Peer(null, {host: '78.236.192.198', port: 2302, path: '/'});*/
+	var socket = io.connect('http://192.168.1.79:2301');
+	var peer = new Peer(null, {host: '192.168.1.79', port: 2302, path: '/'});
 	peer.on('open', function(id){
 		myId = id,
 		console.log(id);
@@ -359,14 +407,17 @@ $(function(){
 			if(e.keyCode == 38)
 			{
 				moveForward = false;
+				updatePosition = true;
 			}
 			else if(e.keyCode == 37)
 			{
 				turnLeft = false;
+				updatePosition = true;
 			}
 			else if(e.keyCode == 39)
 			{
 				turnRight = false;
+				updatePosition = true;
 			}
 		}
 	});

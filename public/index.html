@@ -7,31 +7,34 @@
 	<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
 	<script src="/socket.io/socket.io.js"></script>
 	<script src="http://cdn.peerjs.com/0.3/peer.min.js"></script>
-	<!--<script src="./js/three.min.js"></script>-->
 	<script src="./js/babylon.2.0-alpha.js"></script>
 	<script src="./js/Oimo.js"></script>
 	<script src="./js/script.js"></script>
 </head>
 <body>
-	<div id="index">
+	<div class="panel" id="index">
 		<img src="./images/chat_bubble.png" alt="">
 		<h2>Rooms</h2>
-		<ul id="rooms">
-			
-		</ul>
 		<input type="text" id="createRoomName">
 		<button id="createRoom">Create</button>
 		<button id="launchGame">Launch game</button>
+		<ul id="rooms">
+			
+		</ul>
 	</div>
-	<div id="chatRoom">
+	<div class="panel" id="chatRoom">
 		<h2 id="roomName"></h2>
-		<button id="leaveRoom">Leave room</button>
-		<input type="text" id="newMessage">
-		<h2>Messages</h2>
+		<div>
+			<button id="leaveRoom">Leave room</button>
+		</div>
+			<input type="text" id="newMessage" placeholder="nouveau message">
+		<div>
+			<h2>Messages</h2>
+		</div>
 		<div id="messages">
 		</div>
 	</div>
-	<div id="game">
+	<div class="panel" id="game">
 		<button id="leaveGame">Quit game</button>
 		<div id="gameHolder">
 			<canvas id="babylonRenderer"></canvas>

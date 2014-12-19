@@ -1,18 +1,31 @@
+*
+{
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+	box-sizing: border-box;
+}
+html, body, #game
+{
+    width: 100%;
+    height: 100%;
+    margin: 0;
+}
 h2
 {
+	display: inline-block;
 	color: green;
 }
 #gameHolder
 {
 	position: relative;
-	width: 800px;
-	height: 600px;
+	width: 100%;
+	height: 100%;
 }
 canvas
 {
+	position: absolute;
 	width: 100%;
 	height: 100%;
-	position: absolute;
 	z-index: 0;
 }
 #positionText
@@ -21,4 +34,15 @@ canvas
 	z-index: 10;
 	color: white;
 	margin: 5px 10px;
+}
+#leaveGame
+{
+	position: absolute;
+	right : 0;
+	z-index: 10;
+	margin: 5px 5px;
+}
+#index>img
+{
+	width: 100px;
 }
